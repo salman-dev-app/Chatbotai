@@ -26,7 +26,7 @@ TRANSLATIONS = {
         'welcome': "👋 Welcome to GemBot AI!\n\nI'm powered by Google Gemini and can help you with any questions. Choose an option below:",
         'start_chat': '💬 Start Chat with AI', 'membership_info': '💎 Membership Info', 'contact_admin': '📞 Contact Admin',
         'membership_text': "💎 **Membership Information**\n\nTo use this bot in your group, contact the admin (@otakuosenpai) for authorization.",
-        'help_text': "📖 **How to Use This Bot**\n\n**Available Commands:**\n/start - Main menu\n/language - Change language\n/help - Show this message\n/myinfo - View your info\n/about - About this bot\n\n**Chat:** Just send me any message!",
+        'help_text': "📖 **How to Use This Bot**\n\n**Private Chat:**\nJust send me any message!\n\n**In Groups:**\nUse the command `/ask <your question>` to get a response from me.",
         'myinfo_text': "👤 **Your Information**\n\nUser ID: `{user_id}`\nSelected Language: `{language}`",
         'about_text': "🤖 **About This Bot**\n\nAI assistant powered by Google Gemini.\nMade with ❤️ by MD Salman",
         'choose_language': "🌐 Choose your preferred language:", 'language_updated': "✅ Language updated to {lang}!",
@@ -43,23 +43,18 @@ TRANSLATIONS = {
         'usage_error': "⚠️ Usage: `{command}`"
     },
     'bn': {
-        'welcome': "👋 GemBot AI-তে স্বাগতম!\n\nআমি গুগল জেমিনি দ্বারা চালিত এবং যেকোনো প্রশ্নে আপনাকে সাহায্য করতে পারি। নিচের একটি অপশন বেছে নিন:",
-        'start_chat': '💬 এআই চ্যাট শুরু করুন', 'membership_info': '💎 সদস্যপদ তথ্য', 'contact_admin': '📞 অ্যাডমিনের সাথে যোগাযোগ',
-        'language_updated': "✅ ভাষা {lang} তে পরিবর্তিত হয়েছে!",
-        # Add your other Bengali translations here
+        # ... (আপনার বাংলা অনুবাদ এখানে যোগ করুন) ...
     }
 }
 
 # --- ডেটা ম্যানেজমেন্ট ক্লাস ---
 class BotData:
-    def __init__(self, file_path):
-        self.file_path = file_path
-        self.data = self._load()
+    # ... (আপনার আগের সম্পূর্ণ BotData ক্লাসটি এখানে পেস্ট করুন) ...
+    def __init__(self, file_path): self.file_path = file_path; self.data = self._load()
     def _load(self):
         try:
             with open(self.file_path, 'r', encoding='utf-8') as f: return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return {'authorized_group_ids': [], 'banned_user_ids': [], 'user_languages': {}, 'all_users': []}
+        except (FileNotFoundError, json.JSONDecodeError): return {'authorized_group_ids': [], 'banned_user_ids': [], 'user_languages': {}, 'all_users': []}
     def _save(self):
         try:
             with open(self.file_path, 'w', encoding='utf-8') as f: json.dump(self.data, f, indent=2, ensure_ascii=False)
@@ -99,192 +94,82 @@ def get_text(user_id: int, key: str, **kwargs) -> str:
 def is_admin(user_id: int) -> bool: return user_id == ADMIN_ID
 
 # --- ইউজার কমান্ড হ্যান্ডলার ---
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if bot_data.is_user_banned(user_id): return
-    bot_data.add_user(user_id)
-    keyboard = [[InlineKeyboardButton(get_text(user_id, 'start_chat'), callback_data='start_chat')],
-                [InlineKeyboardButton(get_text(user_id, 'membership_info'), callback_data='membership_info')],
-                [InlineKeyboardButton(get_text(user_id, 'contact_admin'), url='https://t.me/otakuosenpai')]]
-    await update.message.reply_text(get_text(user_id, 'welcome'), reply_markup=InlineKeyboardMarkup(keyboard))
-async def language_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if bot_data.is_user_banned(user_id): return
-    keyboard = [[InlineKeyboardButton('🇬🇧 English', callback_data='set_lang_en')],
-                [InlineKeyboardButton('🇧🇩 বাংলা', callback_data='set_lang_bn')]]
-    await update.message.reply_text(get_text(user_id, 'choose_language'), reply_markup=InlineKeyboardMarkup(keyboard))
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if bot_data.is_user_banned(user_id): return
-    await update.message.reply_text(get_text(user_id, 'help_text'))
-async def myinfo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if bot_data.is_user_banned(user_id): return
-    await update.message.reply_text(get_text(user_id, 'myinfo_text', user_id=user_id, language=bot_data.get_user_language(user_id)))
-async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if bot_data.is_user_banned(user_id): return
-    await update.message.reply_text(get_text(user_id, 'about_text'), parse_mode=constants.ParseMode.MARKDOWN)
+# ... (আপনার আগের সব ইউজার কমান্ড ফাংশন এখানে পেস্ট করুন: start, language_command, help_command, myinfo_command, about_command)
 
 # --- অ্যাডমিন কমান্ড হ্যান্ডলার ---
 async def admin_check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
-    user_id = update.effective_user.id
-    if not is_admin(user_id):
-        await update.message.reply_text(get_text(user_id, 'admin_only'))
-        return False
-    return True
-async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await admin_check(update, context): return
-    await update.message.reply_text(get_text(update.effective_user.id, 'admin_help'))
-async def addgroup(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await admin_check(update, context): return
-    if not context.args: await update.message.reply_text(get_text(update.effective_user.id, 'usage_error', command='/addgroup <group_id>')); return
-    try:
-        group_id = int(context.args[0])
-        bot_data.add_group(group_id)
-        await update.message.reply_text(get_text(update.effective_user.id, 'group_added', group_id=group_id))
-    except ValueError: await update.message.reply_text("Invalid Group ID.")
-async def removegroup(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await admin_check(update, context): return
-    if not context.args: await update.message.reply_text(get_text(update.effective_user.id, 'usage_error', command='/removegroup <group_id>')); return
-    try:
-        group_id = int(context.args[0])
-        bot_data.remove_group(group_id)
-        await update.message.reply_text(get_text(update.effective_user.id, 'group_removed', group_id=group_id))
-    except ValueError: await update.message.reply_text("Invalid Group ID.")
-async def listgroups(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await admin_check(update, context): return
-    groups = bot_data.data['authorized_group_ids']
-    if not groups: await update.message.reply_text(get_text(update.effective_user.id, 'no_groups')); return
-    await update.message.reply_text(get_text(update.effective_user.id, 'group_list', count=len(groups), groups="\n".join(map(str, groups))))
-async def ban(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await admin_check(update, context): return
-    if not context.args: await update.message.reply_text(get_text(update.effective_user.id, 'usage_error', command='/ban <user_id>')); return
-    try:
-        user_id = int(context.args[0])
-        bot_data.ban_user(user_id)
-        await update.message.reply_text(get_text(update.effective_user.id, 'user_banned', user_id=user_id))
-    except ValueError: await update.message.reply_text("Invalid User ID.")
-async def unban(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await admin_check(update, context): return
-    if not context.args: await update.message.reply_text(get_text(update.effective_user.id, 'usage_error', command='/unban <user_id>')); return
-    try:
-        user_id = int(context.args[0])
-        bot_data.unban_user(user_id)
-        await update.message.reply_text(get_text(update.effective_user.id, 'user_unbanned', user_id=user_id))
-    except ValueError: await update.message.reply_text("Invalid User ID.")
-async def listbanned(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await admin_check(update, context): return
-    users = bot_data.data['banned_user_ids']
-    if not users: await update.message.reply_text(get_text(update.effective_user.id, 'no_banned')); return
-    await update.message.reply_text(get_text(update.effective_user.id, 'banned_list', count=len(users), users="\n".join(map(str, users))))
-async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await admin_check(update, context): return
-    await update.message.reply_text(get_text(update.effective_user.id, 'stats_text',
-        users=len(bot_data.data['all_users']),
-        groups=len(bot_data.data['authorized_group_ids']),
-        banned=len(bot_data.data['banned_user_ids'])))
-async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await admin_check(update, context): return
-    message_to_send = " ".join(context.args)
-    if not message_to_send: await update.message.reply_text(get_text(update.effective_user.id, 'usage_error', command='/broadcast <message>')); return
-    context.user_data['broadcast_message'] = message_to_send
-    keyboard = [[InlineKeyboardButton("Yes, Send", callback_data='broadcast_confirm_yes'), InlineKeyboardButton("No, Cancel", callback_data='broadcast_confirm_no')]]
-    await update.message.reply_text(get_text(update.effective_user.id, 'broadcast_confirm', count=len(bot_data.data['all_users']), message=message_to_send), reply_markup=InlineKeyboardMarkup(keyboard))
+    # ... (আপনার আগের admin_check ফাংশন)
+# ... (আপনার আগের সব অ্যাডমিন কমান্ড ফাংশন এখানে পেস্ট করুন: admin_command, addgroup, removegroup, listgroups, ban, unban, listbanned, stats, broadcast)
 
-# --- বাটন এবং মেসেজ হ্যান্ডলার ---
-async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    user_id = query.from_user.id
-    data = query.data
-    if data == 'start_chat': await query.edit_message_text(get_text(user_id, 'chat_started'))
-    elif data == 'membership_info': await query.edit_message_text(get_text(user_id, 'membership_text'), parse_mode=constants.ParseMode.MARKDOWN)
-    elif data.startswith('set_lang_'):
-        lang_code = data.split('_')[-1]
-        lang_name = "English" if lang_code == "en" else "বাংলা"
-        bot_data.set_user_language(user_id, lang_code)
-        await query.edit_message_text(get_text(user_id, 'language_updated', lang=lang_name))
-    elif data == 'broadcast_confirm_yes':
-        if not is_admin(user_id): return
-        message = context.user_data.get('broadcast_message')
-        if not message: await query.edit_message_text("Error: Message not found."); return
-        sent_count = 0
-        for uid in bot_data.data['all_users']:
-            try: await context.bot.send_message(chat_id=uid, text=message); sent_count += 1
-            except Exception as e: logger.error(f"Broadcast failed for user {uid}: {e}")
-        await query.edit_message_text(get_text(user_id, 'broadcast_sent', count=sent_count))
-    elif data == 'broadcast_confirm_no':
-        if not is_admin(user_id): return
-        await query.edit_message_text(get_text(user_id, 'broadcast_cancelled'))
-async def handle_ai_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id, chat, message = update.effective_user.id, update.effective_chat, update.message
-    if chat.type == 'private':
-        if bot_data.is_user_banned(user_id): return
-        bot_data.add_user(user_id)
-    elif chat.type in ['group', 'supergroup']:
-        if not bot_data.is_group_authorized(chat.id): return
-        if bot_data.is_user_banned(user_id): return
-        bot_username = context.bot.username
-        text = message.text.lower() if message.text else ""
-        trigger_keywords = ['!ask', '/ask', 'ai', 'assistant', 'bot']
-        is_reply_to_bot = message.reply_to_message and message.reply_to_message.from_user.id == context.bot.id
-        is_mentioned = f'@{bot_username.lower()}' in text
-        starts_with_keyword = any(text.startswith(keyword) for keyword in trigger_keywords)
-        if not (is_reply_to_bot or is_mentioned or starts_with_keyword): return
-        original_question = message.text
-        for keyword in trigger_keywords:
-            if original_question.lower().startswith(keyword): original_question = original_question[len(keyword):].strip(); break
-        original_question = original_question.replace(f'@{bot_username}', '').strip()
-        if not original_question: return
-        message.text = original_question
-    else: return
-    if not gemini_model: await message.reply_text(get_text(user_id, 'api_error')); return
+# --- নতুন গ্রুপ কমান্ড হ্যান্ডলার ---
+async def ask_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id, chat = update.effective_user.id, update.effective_chat
+    if not bot_data.is_group_authorized(chat.id): return
+    if bot_data.is_user_banned(user_id): return
+    if not context.args:
+        await update.message.reply_text(get_text(user_id, 'usage_error', command='/ask <your question>'))
+        return
+    
+    question = " ".join(context.args)
+    if not gemini_model:
+        await update.message.reply_text(get_text(user_id, 'api_error')); return
     try:
         await context.bot.send_chat_action(chat_id=chat.id, action=constants.ChatAction.TYPING)
-        response = gemini_model.generate_content(message.text)
-        if not response.parts: await message.reply_text(get_text(user_id, 'safety_block')); return
-        await message.reply_text(response.text)
+        response = gemini_model.generate_content(question)
+        if not response.parts:
+            await update.message.reply_text(get_text(user_id, 'safety_block')); return
+        await update.message.reply_text(response.text)
     except Exception as e:
-        logger.error(f"Gemini API Error: {e}")
-        await message.reply_text(get_text(user_id, 'api_error'))
-async def bot_added_to_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    for member in update.message.new_chat_members:
-        if member.id == context.bot.id:
-            chat_id = update.effective_chat.id
-            if not bot_data.is_group_authorized(chat_id):
-                try:
-                    await context.bot.send_message(chat_id=chat_id, text=get_text(0, 'group_unauthorized'))
-                    await context.bot.leave_chat(chat_id)
-                except Exception as e: logger.error(f"Error leaving unauthorized group {chat_id}: {e}")
+        logger.error(f"Gemini API Error in /ask: {e}")
+        await update.message.reply_text(get_text(user_id, 'api_error'))
 
-# --- মূল ফাংশন ---
+# --- ব্যক্তিগত চ্যাট হ্যান্ডলার ---
+async def handle_private_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if bot_data.is_user_banned(user_id): return
+    bot_data.add_user(user_id)
+    if not gemini_model:
+        await update.message.reply_text(get_text(user_id, 'api_error')); return
+    try:
+        await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=constants.ChatAction.TYPING)
+        response = gemini_model.generate_content(update.message.text)
+        if not response.parts:
+            await update.message.reply_text(get_text(user_id, 'safety_block')); return
+        await update.message.reply_text(response.text)
+    except Exception as e:
+        logger.error(f"Gemini API Error in private chat: {e}")
+        await update.message.reply_text(get_text(user_id, 'api_error'))
+
+# --- অন্যান্য হ্যান্ডলার ---
+async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # ... (আপনার আগের button_callback ফাংশন)
+async def bot_added_to_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # ... (আপনার আগের bot_added_to_group ফাংশন)
+
+# --- মূল ফাংশন (নতুন এবং পরিষ্কার সংস্করণ) ---
 def main():
     token = os.getenv('TELEGRAM_BOT_TOKEN')
     if not all([token, ADMIN_ID, GEMINI_API_KEY]):
         logger.critical("FATAL ERROR: Required environment variables are missing!"); return
     application = Application.builder().token(token).build()
+    
     # ইউজার কমান্ড
-    application.add_handler(CommandHandler('start', start))
-    application.add_handler(CommandHandler('language', language_command))
-    application.add_handler(CommandHandler('help', help_command))
-    application.add_handler(CommandHandler('myinfo', myinfo_command))
-    application.add_handler(CommandHandler('about', about_command))
+    # ... (আপনার আগের সব ইউজার কমান্ড হ্যান্ডলার এখানে যোগ করুন)
+    
     # অ্যাডমিন কমান্ড
-    application.add_handler(CommandHandler('admin', admin_command))
-    application.add_handler(CommandHandler('addgroup', addgroup))
-    application.add_handler(CommandHandler('removegroup', removegroup))
-    application.add_handler(CommandHandler('listgroups', listgroups))
-    application.add_handler(CommandHandler('ban', ban))
-    application.add_handler(CommandHandler('unban', unban))
-    application.add_handler(CommandHandler('listbanned', listbanned))
-    application.add_handler(CommandHandler('broadcast', broadcast))
-    application.add_handler(CommandHandler('stats', stats))
+    # ... (আপনার আগের সব অ্যাডমিন কমান্ড হ্যান্ডলার এখানে যোগ করুন)
+    
+    # গ্রুপে ব্যবহারের জন্য বিশেষ কমান্ড
+    application.add_handler(CommandHandler('ask', ask_command))
+    
+    # শুধুমাত্র ব্যক্তিগত চ্যাটের মেসেজ হ্যান্ডেল করার জন্য
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.ChatType.PRIVATE, handle_private_message))
+    
     # অন্যান্য হ্যান্ডলার
     application.add_handler(CallbackQueryHandler(button_callback))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_ai_message))
     application.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, bot_added_to_group))
-    logger.info("Bot starting with ALL features and updated group logic...")
+
+    logger.info("Bot starting with /ask command for groups...")
     application.run_polling()
 
 if __name__ == '__main__':
