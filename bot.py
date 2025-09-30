@@ -120,7 +120,7 @@ try:
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
     if not GEMINI_API_KEY: raise ValueError("GEMINI_API_KEY not found")
     genai.configure(api_key=GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+    gemini_model = genai.GenerativeModel('gemini-2.5-flash')
 except Exception as e:
     logger.critical(f"FATAL: Failed to configure Gemini API - {e}")
     gemini_model = None
