@@ -11,7 +11,7 @@ A powerful, feature-rich, and multi-language Telegram bot powered by Google's Ge
 ## ✨ Demo
 
 <!-- Add a screenshot or GIF of your bot in action here -->
-![Bot Demo](https://i.imgur.com/your-image-link.png)
+![Bot Demo](https://files.catbox.moe/vnko8p.png)](https://files.catbox.moe/vnko8p.png))
 <!-- To make this file more attractive, add a screenshot of the bot's functionality. -->
 
 ---
