@@ -111,15 +111,7 @@ You will add these variables directly to your hosting platform (e.g., Koyeb).
 4.  Navigate to the **Environment Variables** section and add the three secret variables mentioned above (`TELEGRAM_BOT_TOKEN`, `GEMINI_API_KEY`, `ADMIN_ID`).
 5.  Click **Deploy**. Your bot will be online in a few moments!
 
----
 
-## 📂 Project Structure.
-├── bot.py  Main bot code containing all logic
-├── requirements.txt  List of required Python libraries
-├── Procfile  Command for Koyeb to run the bot
-├── .gitignore  Specifies which files Git should ignore
-└── README.md  This file**
----
 
 ## 🙏 Acknowledgements & Contact
 
