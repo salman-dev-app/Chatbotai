@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import asyncio
 import google.generativeai as genai
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, constants
 from telegram.ext import (
@@ -98,6 +99,39 @@ def get_text(user_id: int, key: str, **kwargs) -> str:
     return text.format(**kwargs) if kwargs else text
 def is_admin(user_id: int) -> bool: return user_id == ADMIN_ID
 
+async def send_long_message(context: ContextTypes.DEFAULT_TYPE, chat_id: int, text: str):
+    MAX_LENGTH = 4000
+    if len(text) <= MAX_LENGTH:
+        await context.bot.send_message(chat_id=chat_id, text=text, parse_mode=constants.ParseMode.MARKDOWN)
+        return
+    parts = []
+    while len(text) > 0:
+        if len(text) > MAX_LENGTH:
+            part = text[:MAX_LENGTH]
+            last_newline = part.rfind('\n')
+            if last_newline != -1:
+                parts.append(part[:last_newline])
+                text = text[last_newline + 1:]
+            else:
+                parts.append(part)
+                text = text[MAX_LENGTH:]
+        else:
+            parts.append(text)
+            break
+    for part in parts:
+        await context.bot.send_message(chat_id=chat_id, text=part, parse_mode=constants.ParseMode.MARKDOWN)
+        await asyncio.sleep(0.5)
+
+async def generate_gemini_response(prompt: str) -> str | None:
+    """Runs the synchronous Gemini API call in a separate thread to avoid blocking."""
+    if not gemini_model: return None
+    try:
+        response = await asyncio.to_thread(gemini_model.generate_content, prompt)
+        return response.text if response.parts else "" # Return empty string for safety block
+    except Exception as e:
+        logger.error(f"Gemini API call failed: {e}")
+        return None
+
 # --- ইউজার কমান্ড হ্যান্ডলার ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -116,7 +150,7 @@ async def language_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if bot_data.is_user_banned(user_id): return
-    await update.message.reply_text(get_text(user_id, 'help_text'))
+    await update.message.reply_text(get_text(user_id, 'help_text'), parse_mode=constants.ParseMode.MARKDOWN)
 async def myinfo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if bot_data.is_user_banned(user_id): return
@@ -135,7 +169,7 @@ async def admin_check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> boo
     return True
 async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await admin_check(update, context): return
-    await update.message.reply_text(get_text(update.effective_user.id, 'admin_help'))
+    await update.message.reply_text(get_text(update.effective_user.id, 'admin_help'), parse_mode=constants.ParseMode.MARKDOWN)
 async def addgroup(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await admin_check(update, context): return
     if not context.args: await update.message.reply_text(get_text(update.effective_user.id, 'usage_error', command='/addgroup <group_id>')); return
@@ -192,7 +226,7 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton("Yes, Send", callback_data='broadcast_confirm_yes'), InlineKeyboardButton("No, Cancel", callback_data='broadcast_confirm_no')]]
     await update.message.reply_text(get_text(update.effective_user.id, 'broadcast_confirm', count=len(bot_data.data['all_users']), message=message_to_send), reply_markup=InlineKeyboardMarkup(keyboard))
 
-# --- গ্রুপ এবং ব্যক্তিগত চ্যাটের জন্য নতুন হ্যান্ডলার ---
+# --- গ্রুপ এবং ব্যক্তিগত চ্যাটের জন্য হ্যান্ডলার ---
 async def ask_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id, chat = update.effective_user.id, update.effective_chat
     if bot_data.is_user_banned(user_id): return
@@ -201,31 +235,30 @@ async def ask_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(get_text(user_id, 'usage_error', command='/ask <your question>'))
         return
     question = " ".join(context.args)
-    if not gemini_model:
-        await update.message.reply_text(get_text(user_id, 'api_error')); return
-    try:
-        await context.bot.send_chat_action(chat_id=chat.id, action=constants.ChatAction.TYPING)
-        response = gemini_model.generate_content(question)
-        if not response.parts:
-            await update.message.reply_text(get_text(user_id, 'safety_block')); return
-        await update.message.reply_text(response.text)
-    except Exception as e:
-        logger.error(f"Gemini API Error in /ask: {e}")
+    
+    await context.bot.send_chat_action(chat_id=chat.id, action=constants.ChatAction.TYPING)
+    response_text = await generate_gemini_response(question)
+    
+    if response_text is not None and response_text != "":
+        await send_long_message(context, chat.id, response_text)
+    elif response_text == "":
+        await update.message.reply_text(get_text(user_id, 'safety_block'))
+    else:
         await update.message.reply_text(get_text(user_id, 'api_error'))
+
 async def handle_private_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
+    user_id, chat_id = update.effective_user.id, update.effective_chat.id
     if bot_data.is_user_banned(user_id): return
     bot_data.add_user(user_id)
-    if not gemini_model:
-        await update.message.reply_text(get_text(user_id, 'api_error')); return
-    try:
-        await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=constants.ChatAction.TYPING)
-        response = gemini_model.generate_content(update.message.text)
-        if not response.parts:
-            await update.message.reply_text(get_text(user_id, 'safety_block')); return
-        await update.message.reply_text(response.text)
-    except Exception as e:
-        logger.error(f"Gemini API Error in private chat: {e}")
+
+    await context.bot.send_chat_action(chat_id=chat_id, action=constants.ChatAction.TYPING)
+    response_text = await generate_gemini_response(update.message.text)
+    
+    if response_text is not None and response_text != "":
+        await send_long_message(context, chat_id, response_text)
+    elif response_text == "":
+        await update.message.reply_text(get_text(user_id, 'safety_block'))
+    else:
         await update.message.reply_text(get_text(user_id, 'api_error'))
 
 # --- অন্যান্য হ্যান্ডলার ---
@@ -298,7 +331,7 @@ def main():
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, bot_added_to_group))
 
-    logger.info("Bot starting with /ask command for groups...")
+    logger.info("Bot starting with non-blocking API calls and final features...")
     application.run_polling()
 
 if __name__ == '__main__':
