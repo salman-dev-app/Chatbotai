@@ -114,11 +114,11 @@ You will add these variables directly to your hosting platform (e.g., Koyeb).
 ---
 
 ## 📂 Project Structure.
-├── bot.py # Main bot code containing all logic
-├── requirements.txt # List of required Python libraries
-├── Procfile # Command for Koyeb to run the bot
-├── .gitignore # Specifies which files Git should ignore
-└── README.md # This file**
+├── bot.py  Main bot code containing all logic
+├── requirements.txt  List of required Python libraries
+├── Procfile  Command for Koyeb to run the bot
+├── .gitignore  Specifies which files Git should ignore
+└── README.md  This file**
 ---
 
 ## 🙏 Acknowledgements & Contact
