@@ -117,4 +117,4 @@ You will add these variables directly to your hosting platform (e.g., Koyeb).
 
 Made with ❤️ by **MD Salman**.
 
-For any questions or support, please contact the admin: [@otakuosenpai](https://t.me/otakuosenpai)**
+For any questions or support, please contact the admin: [@otakuosenpai](https://t.me/otakuosenpai)
